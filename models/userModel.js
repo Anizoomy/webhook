@@ -22,6 +22,20 @@ const userSchema = mongoose.Schema({
       type: mongoose.Schema.Types.Object,
       ref: 'products'
     }
+  ],
+  cart: [
+    {
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'products',
+        required: true
+      },
+      quantity: {
+        type: Number,
+        default: 1,
+        min: 1
+      }
+    }
   ]
 }, {
   timestamp: true
