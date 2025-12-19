@@ -20,11 +20,6 @@ exports.createUser = async (req, res) => {
         location
       });
       
-      const response = {
-        username: user.username,
-        location: user.location
-      }
-
       await user.save();
       res.status(201).json({
         statusCode: false,
