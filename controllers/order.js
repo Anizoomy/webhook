@@ -60,10 +60,11 @@ exports.makeOrder = async (req, res) => {
 exports.verify = async (req, res) => {
   try {
     // const payload = JSON.parse(req.body.toString());
-    const {event, data}= req.body;
+    const {event, data}= req.body || {};
+    const reference = data?.reference || data?.transaction?.reference
     console.log(event);
     console.log(data?.reference);
-    const order = await orderModel.findOne({ reference: data.reference });
+    const order = await orderModel.findOne({ reference });
 
     if (!order) {
       return res.status(404).json({
