@@ -59,10 +59,11 @@ exports.makeOrder = async (req, res) => {
 
 exports.verify = async (req, res) => {
   try {
-    const {event}= req.body
+    const payload = JSON.parse(req.body.toString());
+    const {event, data}= payload;
     console.log(event);
-  
-    const order = await orderModel.findOne({ reference: event.reference });
+    console.log(data?.reference);
+    const order = await orderModel.findOne({ reference: data.reference });
 
     if (!order) {
       res.status(404).json({
@@ -70,18 +71,20 @@ exports.verify = async (req, res) => {
       })
     };
 
-    if (event.event === 'charge.success') {
+    if (event === 'charge.success') {
       order.status = 'successful'
-    } else if (event.event === 'charge.failed') {
+    } else if (event === 'charge.failed') {
       order.status = 'failed'
     };
 
     await order.save();
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       statusCode: false,
       statusText: "Internal Server error",
-      message: 'Error verifying order' + error.message
+      message: 'Error verifying order' + error.message,
+     
     })
   }
 }
