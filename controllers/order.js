@@ -57,35 +57,76 @@ exports.makeOrder = async (req, res) => {
   }
 };
 
+// exports.verify = async (req, res) => {
+//   try {
+//     // const payload = JSON.parse(req.body.toString());
+//     const {event, data}= req.body || {};
+//     const reference = data?.reference || data?.transaction?.reference
+//     console.log(event);
+//     console.log(data?.reference);
+//     const order = await orderModel.findOne({ reference });
+
+//     if (!order) {
+//       return res.status(404).json({
+//         message: "Order not found"
+//       });
+//     }
+
+//     if (event === 'charge.success') {
+//       order.status = 'successful'
+//     } else if (event === 'charge.failed') {
+//       order.status = 'failed'
+//     }
+
+//     await order.save();
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({
+//       statusCode: false,
+//       statusText: "Internal Server error",
+//       message: 'Error verifying order' + error.message,
+     
+//     })
+//   }
+// }
+
 exports.verify = async (req, res) => {
   try {
-    // const payload = JSON.parse(req.body.toString());
-    const {event, data}= req.body || {};
-    const reference = data?.reference || data?.transaction?.reference
-    console.log(event);
-    console.log(data?.reference);
-    const order = await orderModel.findOne({ reference });
+    const { event, data } = req.body || {};
 
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found"
+    // Safely get reference from possible locations
+    const reference =
+      data?.reference || data?.transaction?.reference;
+
+    if (!reference) {
+      console.warn('Webhook received without reference, ignoring.');
+      return res.status(200).json({
+        message: 'No reference found, ignored'
       });
     }
 
-    if (event === 'charge.success') {
-      order.status = 'successful'
-    } else if (event === 'charge.failed') {
-      order.status = 'failed'
+    const order = await orderModel.findOne({ reference: reference.trim() });
+
+    if (!order) {
+      console.warn('Order not found for reference:', reference);
+      return res.status(200).json({
+        message: 'Order not found, ignored'
+      });
     }
 
+    if (event === 'charge.success') order.status = 'successful';
+    if (event === 'charge.failed') order.status = 'failed';
+
     await order.save();
+
+    return res.status(200).json({
+      message: 'Webhook processed successfully'
+    });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      statusCode: false,
-      statusText: "Internal Server error",
-      message: 'Error verifying order' + error.message,
-     
-    })
+    console.error('Webhook error:', error);
+    return res.status(500).json({
+      message: 'Error verifying order: ' + error.message
+    });
   }
-}
+};
