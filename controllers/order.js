@@ -59,23 +59,23 @@ exports.makeOrder = async (req, res) => {
 
 exports.verify = async (req, res) => {
   try {
-    const payload = JSON.parse(req.body.toString());
-    const {event, data}= payload;
+    // const payload = JSON.parse(req.body.toString());
+    const {event, data}= req.body;
     console.log(event);
     console.log(data?.reference);
     const order = await orderModel.findOne({ reference: data.reference });
 
     if (!order) {
-      res.status(404).json({
+      return res.status(404).json({
         message: "Order not found"
-      })
-    };
+      });
+    }
 
     if (event === 'charge.success') {
       order.status = 'successful'
     } else if (event === 'charge.failed') {
       order.status = 'failed'
-    };
+    }
 
     await order.save();
   } catch (error) {
