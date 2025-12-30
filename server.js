@@ -5,6 +5,7 @@ const mongoose = require('mongoose')
 const userRouter = require('./routes/userRouter')
 const productRouter = require('./routes/productRouter')
 const addCart = require('./routes/addCartRouter')
+const order = require('./routes/order')
 
 const app = express()
 app.use(express.json()); 
@@ -13,8 +14,9 @@ app.use(express.json());
 app.use("/api/v1", userRouter)
 app.use("/api/v1", productRouter)
 app.use('/api/v1', addCart)
+app.use('/api/v1', order)
 
-const db = process.env.DATABASE_URI
+const db = process.env.DATABASE_URI   
 
 mongoose
 .connect(db)

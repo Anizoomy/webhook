@@ -1,11 +1,10 @@
 const userModel = require('../models/userModel');
 const productModel = require('../models/productModel');
+const cartModel = require('../models/cart');
 
 exports.addCart = async (req, res) => {
     try {
         const { userId, productId } = req.params;
-        const { quantity = 1 } = req.body;
-
         const user = await userModel.findById(userId);
 
         if (!user) {
@@ -22,36 +21,31 @@ exports.addCart = async (req, res) => {
             });
         }
 
-        if (!product.isAvailable || product.quantity < quantity) {
-            return res.status(400).json({
-                message: 'Product not available'
-            });
-        }
+        const existingCart = await cartModel.findOne({ productId: productId });
 
-        const items = user.cart.findIndex(
-            item => item.product.toString() === productId
-        );
+        if (existingCart) {
+            existingCart.quantity += 1
+            existingCart.price = existingCart.price * existingCart.quantity
+            await existingCart.save();
+            return res.status(200).json({
+                message: 'Added to cart'
+            })
+        };
 
-        if (items > -1) {
-            user.cart[items].quantity += quantity;
-        } else {
-            user.cart.push({
-                product: productId,
-                quantity
-            });
-        }
-
-        await user.save();
-
+        const cart = new cartModel({
+            userId: user._id,
+            productId: product._id,
+            price: product.unitPrice
+        });
+        await cart.save();
         res.status(200).json({
             message: 'Product added successfully',
-            cart: user.cart
         })
     } catch (error) {
-      res.status(500).json({
-        statusCode: false,
-        statusText: "Internal Server error",
-        message: 'Error creating user' + error.message
-    })
-  } 
+        res.status(500).json({
+            statusCode: false,
+            statusText: "Internal Server error",
+            message: 'Error creating user' + error.message
+        })
+    }
 }
